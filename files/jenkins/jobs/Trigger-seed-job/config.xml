@@ -1,0 +1,85 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty plugin="gitlab-plugin@1.7.15">
+      <gitLabConnection>gitlab</gitLabConnection>
+      <jobCredentialId></jobCredentialId>
+      <useAlternativeCredential>false</useAlternativeCredential>
+    </com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>gitlabAdrr</name>
+          <description>GitLab Adrress</description>
+          <defaultValue>192.168.56.103:8929</defaultValue>
+          <trim>true</trim>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>repoName</name>
+          <description>Repo Name</description>
+          <defaultValue>default_value</defaultValue>
+          <trim>true</trim>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>curl --request POST --header &quot;PRIVATE-TOKEN: ${apiCred}&quot; &quot;http://${gitlabAdrr}/api/v4/projects?name=${repoName}&amp;namespace_id=2&quot;</command>
+      <configuredLocalRules/>
+    </hudson.tasks.Shell>
+    <javaposse.jobdsl.plugin.ExecuteDslScripts plugin="job-dsl@1.84">
+      <scriptText>multibranchPipelineJob(&quot;${repoName}&quot;) {
+    branchSources {
+        git {
+            id(&quot;${repoName}&quot;)
+            remote(&quot;http://${gitlabAdrr}/spring-group/${repoName}.git&quot;)
+            credentialsId(&apos;gitlab-cred&apos;)
+            includes(&apos;*&apos;)
+        }
+    }
+}</scriptText>
+      <usingScriptText>true</usingScriptText>
+      <sandbox>false</sandbox>
+      <ignoreExisting>false</ignoreExisting>
+      <ignoreMissingFiles>false</ignoreMissingFiles>
+      <failOnMissingPlugin>false</failOnMissingPlugin>
+      <failOnSeedCollision>false</failOnSeedCollision>
+      <unstableOnDeprecation>false</unstableOnDeprecation>
+      <removedJobAction>IGNORE</removedJobAction>
+      <removedViewAction>IGNORE</removedViewAction>
+      <removedConfigFilesAction>IGNORE</removedConfigFilesAction>
+      <lookupStrategy>JENKINS_ROOT</lookupStrategy>
+    </javaposse.jobdsl.plugin.ExecuteDslScripts>
+    <hudson.tasks.Shell>
+      <command>PROJECT_ID=$(curl --header &quot;Private-Token: glpat-3FqxuVSxFPZvSL25AgNC&quot; http://192.168.56.103:8929/api/v4/projects?search=$repoName | jq .[0].id -r)
+curl --request PUT --header &quot;PRIVATE-TOKEN: ${apiCred}&quot; --data &quot;jenkins_url=http://192.168.56.101:8080/&quot; --data &quot;project_name=${repoName}&quot; --data &quot;username=huy&quot; --data &quot;password=$JENKINS_PASSWORD&quot; &quot;http://${gitlabAdrr}/api/v4/projects/${PROJECT_ID}/services/jenkins&quot;</command>
+      <configuredLocalRules/>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers/>
+  <buildWrappers>
+    <org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper plugin="credentials-binding@631.v861c06d062b_4">
+      <bindings>
+        <org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>
+          <credentialsId>gitlab-api</credentialsId>
+          <variable>apiCred</variable>
+        </org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>
+        <org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>
+          <credentialsId>huy-jenkins-pass</credentialsId>
+          <variable>JENKINS_PASSWORD</variable>
+        </org.jenkinsci.plugins.credentialsbinding.impl.StringBinding>
+      </bindings>
+    </org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper>
+  </buildWrappers>
+</project>

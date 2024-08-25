@@ -1,0 +1,4 @@
+jenkins ansible_host=192.168.56.109 ansible_user=root
+
+[all]
+jenkins
